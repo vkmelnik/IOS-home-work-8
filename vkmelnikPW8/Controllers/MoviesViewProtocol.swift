@@ -8,5 +8,5 @@
 import UIKit
 
 protocol MoviesViewProtocol: UITableViewDataSource, UITableViewDelegate {
-    
+    func search(_ search: String)
 }

@@ -12,12 +12,16 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
     var moviesView: MoviesListView?
     var movies: [Movie]?
     private let apiKey = "8254e1ec81190a4724ab08c28f6224d3"
+    var session: URLSessionDataTask?
+    let sessionGroup = DispatchGroup()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         configureUI()
-        DispatchQueue.global(qos: .background).async { [weak self] in self?.loadMovies() }
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            self?.loadMovies()
+        }
     }
 
     private func configureUI() {
@@ -31,18 +35,29 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
         moviesView.tableView.reloadData()
     }
     
-    private func loadMovies() {
-        guard let url = URL(string: "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&language=ruRu") else {
+    func search(_ search: String) {
+        DispatchQueue.global(qos: .background).async { [weak self] in self?.loadMovies(search.replacingOccurrences(of: " ", with: "+"))
+        }
+    }
+    
+    private func loadMovies(_ search: String = "") {
+        guard let url = URL(string:
+                                search.isEmpty
+                                ?"https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&language=ruRu"
+                                :"https://api.themoviedb.org/3/search/movie?api_key=\(apiKey)&language=ruRu&query=\(search)") else {
             return assertionFailure("some problems with url")
         }
-        let session = URLSession.shared.dataTask(with: URLRequest(url: url), completionHandler: { data, _, _ in
+        sessionGroup.wait()
+        sessionGroup.enter()
+        session?.cancel()
+        session = URLSession.shared.dataTask(with: URLRequest(url: url), completionHandler: { data, _, _ in
             guard
                 let data = data,
                 let dict = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any], // .json5Allowed not available.
                 let results = dict["results"] as? [[String: Any]] else { return }
             let movies: [Movie] = results.map { params in
                 let title = params["title"] as! String
-                let imagePath = params["poster_path"] as! String
+                let imagePath = params["poster_path"] as? String
                 return Movie(title: title, posterPath: imagePath)
             }
             
@@ -54,7 +69,8 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
             }
         })
         
-        session.resume()
+        session!.resume()
+        sessionGroup.leave()
     }
     
     private func loadImagesForMovies(_ movies: [Movie], completion: @escaping ([Movie]) -> Void) {
