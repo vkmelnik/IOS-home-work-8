@@ -10,11 +10,13 @@ import UIKit
 class MoviesViewController: UIViewController, MoviesViewProtocol {
     
     var moviesView: MoviesListView?
+    private let apiKey = "8254e1ec81190a4724ab08c28f6224d3"
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         configureUI()
+        DispatchQueue.global(qos: .background).async { [weak self] in self?.loadMovies() }
     }
 
     private func configureUI() {
@@ -26,6 +28,17 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
         moviesView.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor)
         self.moviesView = moviesView
         moviesView.tableView.reloadData()
+    }
+    
+    private func loadMovies() {
+        guard let url = URL(string: "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&language=ruRu") else {
+            return assertionFailure("some problems with url")
+        }
+        let session = URLSession.shared.dataTask(with: URLRequest(url: url), completionHandler: { data, _, _ in
+            
+        })
+        
+        session.resume()
     }
 
 }
