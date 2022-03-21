@@ -43,15 +43,33 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
             let movies: [Movie] = results.map { params in
                 let title = params["title"] as! String
                 let imagePath = params["poster_path"] as! String
-                return Movie(title: title, posterPath: imagePath, poster: nil)
+                return Movie(title: title, posterPath: imagePath)
             }
-            self.movies = movies
-            DispatchQueue.main.async {
-                self.moviesView?.tableView.reloadData()
+            
+            self.loadImagesForMovies(movies) { movies in
+                self.movies = movies
+                DispatchQueue.main.async {
+                    self.moviesView?.tableView.reloadData()
+                }
             }
         })
         
         session.resume()
+    }
+    
+    private func loadImagesForMovies(_ movies: [Movie], completion: @escaping ([Movie]) -> Void) {
+        let group = DispatchGroup()
+        for movie in movies {
+            group.enter()
+            DispatchQueue.global(qos: .background).async {
+                movie.loadPoster { _ in
+                    group.leave()
+                }
+            }
+        }
+        group.notify(queue: .main) {
+            completion(movies)
+        }
     }
 
 }
@@ -67,7 +85,7 @@ extension MoviesViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: MovieView.identifier, for: indexPath) as! MovieView
-        cell.configure(movie: movies?[indexPath.row] ?? Movie(title: "Ошибка загрузки", posterPath: "", poster: nil))
+        cell.configure(movie: movies?[indexPath.row] ?? Movie(title: "Ошибка загрузки", posterPath: nil))
         return cell
     }
     
