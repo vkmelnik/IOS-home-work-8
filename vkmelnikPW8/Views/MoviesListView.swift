@@ -21,6 +21,7 @@ class MoviesListView: UIView {
         tableView.pin(to: self)
         tableView.backgroundColor = .clear
         tableView.dataSource = controller
+        tableView.delegate = controller
         tableView.register(MovieView.self, forCellReuseIdentifier: MovieView.identifier)
     }
     

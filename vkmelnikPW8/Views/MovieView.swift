@@ -13,14 +13,19 @@ class MovieView: UITableViewCell {
     private let poster = UIImageView()
     private let title = UILabel()
     
-    init() {
-        super.init(style: .default, reuseIdentifier: Self.identifier)
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
         self.backgroundColor = .white
         configureUI()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func configure(movie: Movie) {
+        title.text = movie.title
+        poster.image = movie.poster
     }
     
     private func configureUI() {
@@ -36,6 +41,7 @@ class MovieView: UITableViewCell {
         title.pinRight(to: self)
         title.setHeight(to: 20)
         title.textAlignment = .center
+        title.textColor = .black
     }
 
     override func awakeFromNib() {

@@ -10,6 +10,7 @@ import UIKit
 class MoviesViewController: UIViewController, MoviesViewProtocol {
     
     var moviesView: MoviesListView?
+    var movies: [Movie]?
     private let apiKey = "8254e1ec81190a4724ab08c28f6224d3"
 
     override func viewDidLoad() {
@@ -35,7 +36,19 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
             return assertionFailure("some problems with url")
         }
         let session = URLSession.shared.dataTask(with: URLRequest(url: url), completionHandler: { data, _, _ in
-            
+            guard
+                let data = data,
+                let dict = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any], // .json5Allowed not available.
+                let results = dict["results"] as? [[String: Any]] else { return }
+            let movies: [Movie] = results.map { params in
+                let title = params["title"] as! String
+                let imagePath = params["poster_path"] as! String
+                return Movie(title: title, posterPath: imagePath, poster: nil)
+            }
+            self.movies = movies
+            DispatchQueue.main.async {
+                self.moviesView?.tableView.reloadData()
+            }
         })
         
         session.resume()
@@ -43,13 +56,19 @@ class MoviesViewController: UIViewController, MoviesViewProtocol {
 
 }
 
-extension MoviesViewController: UITableViewDataSource {
+extension MoviesViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 230
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 0
+        return movies?.count ?? 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return MovieView()
+        let cell = tableView.dequeueReusableCell(withIdentifier: MovieView.identifier, for: indexPath) as! MovieView
+        cell.configure(movie: movies?[indexPath.row] ?? Movie(title: "Ошибка загрузки", posterPath: "", poster: nil))
+        return cell
     }
     
     

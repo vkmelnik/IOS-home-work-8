@@ -7,6 +7,6 @@
 
 import UIKit
 
-protocol MoviesViewProtocol: UITableViewDataSource {
+protocol MoviesViewProtocol: UITableViewDataSource, UITableViewDelegate {
     
 }
